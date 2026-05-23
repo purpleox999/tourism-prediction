@@ -25,13 +25,18 @@ jobs:
         pip install huggingface_hub[cli] datasets scikit-learn mlflow hyperopt xgboost
 
     - name: Hugging Face Login
-      run: |
-        echo "${{ secrets.HF_TOKEN }}" | huggingface-cli login
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: huggingface-cli login --token $HF_TOKEN --add-to-git-credential
 
     - name: Run Data Registration
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: python tourism_project/model_building/data_register.py
 
     - name: Run Notebook for Model Building and Deployment
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
         # This step would typically run your model training and evaluation notebook.
         # For simplicity, we'll simulate the critical parts that generate outputs needed for deployment.
@@ -42,9 +47,10 @@ jobs:
         # Placeholder for model building/evaluation if not handled by a separate script
         # Ensure the model and preprocessor are available locally as expected by the next steps
         mkdir -p tourism_project/model_building
-        python -c "import joblib; import xgboost as xgb; from huggingface_hub import hf_hub_download; import os;\nrepo_id_model = \"excelsiorR/tourism-package-prediction-model\";\nmodel_path_hf = hf_hub_download(repo_id=repo_id_model, filename=\"xgboost_model.json\");\npreprocessor_path_hf = hf_hub_download(repo_id=repo_id_model, filename=\"preprocessor.joblib\");\nloaded_model = xgb.XGBClassifier(); loaded_model.load_model(model_path_hf);\nloaded_preprocessor = joblib.load(preprocessor_path_hf);\nloaded_model.save_model('tourism_project/model_building/xgboost_model.json');\njoblib.dump(loaded_preprocessor, 'tourism_project/model_building/preprocessor.joblib');"
-
+        python -c "import joblib; import xgboost as xgb; from huggingface_hub import hf_hub_download; import os;\nrepo_id_model = \"excelsiorR/tourism-package-prediction-model\";\nmodel_path_hf = [...]
 
     - name: Build and Push HF Space (App Deployment)
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        python -c "\nfrom huggingface_hub import HfApi\nimport os\n\napi = HfApi(token=os.getenv(\"HF_TOKEN\"))\nspace_repo_id = \"excelsiorR/tourism-package-prediction\"\n\n# Upload Dockerfile\napi.upload_file(\n    path_or_fileobj=\"tourism_project/Dockerfile\",\n    path_in_repo=\"Dockerfile\",\n    repo_id=space_repo_id,\n    repo_type=\"space\",\n)\nprint(f\"Uploaded Dockerfile to {space_repo_id}\")\n\n# Upload requirements.txt\napi.upload_file(\n    path_or_fileobj=\"tourism_project/requirements.txt\",\n    path_in_repo=\"requirements.txt\",\n    repo_id=space_repo_id,\n    repo_type=\"space\",\n)\nprint(f\"Uploaded requirements.txt to {space_repo_id}\")\n\n# Upload app.py\napi.upload_file(\n    path_or_fileobj=\"tourism_project/app.py\",\n    path_in_repo=\"app.py\",\n    repo_id=space_repo_id,\n    repo_type=\"space\",\n)\nprint(f\"Uploaded app.py to {space_repo_id}\")\n\nprint(\"Deployment files successfully uploaded to Hugging Face Space.\")\n"
+        python -c "\nfrom huggingface_hub import HfApi\nimport os\n\napi = HfApi(token=os.getenv(\"HF_TOKEN\"))\nspace_repo_id = \"excelsiorR/tourism-package-prediction\"\n\n# Upload Dockerfile\na[...]
