@@ -25,14 +25,19 @@ jobs:
         pip install huggingface_hub[cli] datasets scikit-learn mlflow hyperopt xgboost
 
     - name: Check HF_TOKEN authentication
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        export HF_TOKEN="${{ secrets.HF_TOKEN }}"
         huggingface-cli whoami
 
     - name: Run Data Registration
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: python tourism_project/model_building/data_register.py
 
     - name: Run Notebook for Model Building and Deployment
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
         # This step would typically run your model training and evaluation notebook.
         # For simplicity, we'll simulate the critical parts that generate outputs needed for deployment.
@@ -68,6 +73,8 @@ jobs:
         EOF
 
     - name: Build and Push HF Space (App Deployment)
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
         python << 'EOF'
         from huggingface_hub import HfApi
