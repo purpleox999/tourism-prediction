@@ -1,4 +1,3 @@
-%%writefile .github/workflows/main_pipeline.yml
 name: MLOps Pipeline
 
 on:
