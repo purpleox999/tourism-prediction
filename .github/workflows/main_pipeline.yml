@@ -1,3 +1,4 @@
+%%writefile .github/workflows/main_pipeline.yml
 name: MLOps Pipeline
 
 on:
@@ -22,22 +23,25 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r tourism_project/requirements.txt
-        pip install huggingface_hub[cli] datasets scikit-learn mlflow hyperopt xgboost
+        pip install huggingface_hub datasets scikit-learn mlflow hyperopt xgboost
 
     - name: Hugging Face Login
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      run: huggingface-cli login --token $HF_TOKEN --add-to-git-credential
+      run: |
+        echo "${{ secrets.HF_TOKEN }}" | huggingface-cli login
 
     - name: Run Data Registration
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: python tourism_project/model_building/data_register.py
 
     - name: Run Notebook for Model Building and Deployment
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
+        # This step would typically run your model training and evaluation notebook.
+        # For simplicity, we'll simulate the critical parts that generate outputs needed for deployment.
+        # In a real scenario, you'd execute your notebook cells that perform training and model saving.
+        # Since the model and preprocessor are already generated and registered in the previous notebook run,
+        # we will ensure the files exist and then proceed with deployment artifacts.
+
+        # Placeholder for model building/evaluation if not handled by a separate script
+        # Ensure the model and preprocessor are available locally as expected by the next steps
         mkdir -p tourism_project/model_building
         python << 'EOF'
 import joblib
@@ -46,19 +50,24 @@ from huggingface_hub import hf_hub_download
 import os
 
 repo_id_model = "excelsiorR/tourism-package-prediction-model"
-model_path_hf = hf_hub_download(repo_id=repo_id_model, filename="model.joblib")
+
+# Download the model and preprocessor
+model_path_hf = hf_hub_download(repo_id=repo_id_model, filename="xgboost_model.json")
 preprocessor_path_hf = hf_hub_download(repo_id=repo_id_model, filename="preprocessor.joblib")
 
-# Save locally
-joblib.dump(joblib.load(model_path_hf), "tourism_project/model_building/model.joblib")
-joblib.dump(joblib.load(preprocessor_path_hf), "tourism_project/model_building/preprocessor.joblib")
+# Load the model and preprocessor
+loaded_model = xgb.XGBClassifier()
+loaded_model.load_model(model_path_hf) # Load from JSON
+loaded_preprocessor = joblib.load(preprocessor_path_hf)
+
+# Save them locally in the expected structure for subsequent steps
+loaded_model.save_model("tourism_project/model_building/xgboost_model.json")
+joblib.dump(loaded_preprocessor, "tourism_project/model_building/preprocessor.joblib")
 
 print("Model and preprocessor downloaded and saved successfully")
 EOF
 
     - name: Build and Push HF Space (App Deployment)
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
         python << 'EOF'
 from huggingface_hub import HfApi
@@ -68,6 +77,28 @@ api = HfApi(token=os.getenv("HF_TOKEN"))
 space_repo_id = "excelsiorR/tourism-package-prediction"
 
 # Upload or update Space files
-print(f"Deploying to Hugging Face Space: {space_repo_id}")
+api.upload_file(
+    path_or_fileobj="tourism_project/Dockerfile",
+    path_in_repo="Dockerfile",
+    repo_id=space_repo_id,
+    repo_type="space",
+)
+print(f"Uploaded Dockerfile to {space_repo_id}")
+
+api.upload_file(
+    path_or_fileobj="tourism_project/requirements.txt",
+    path_in_repo="requirements.txt",
+    repo_id=space_repo_id,
+    repo_type="space",
+)
+print(f"Uploaded requirements.txt to {space_repo_id}")
+
+api.upload_file(
+    path_or_fileobj="tourism_project/app.py",
+    path_in_repo="app.py",
+    repo_id=space_repo_id,
+    repo_type="space",
+)
+print(f"Uploaded app.py to {space_repo_id}")
 print("Deployment completed successfully")
 EOF
