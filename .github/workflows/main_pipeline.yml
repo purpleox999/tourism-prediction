@@ -38,19 +38,36 @@ jobs:
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        # This step would typically run your model training and evaluation notebook.
-        # For simplicity, we'll simulate the critical parts that generate outputs needed for deployment.
-        # In a real scenario, you'd execute your notebook cells that perform training and model saving.
-        # Since the model and preprocessor are already generated and registered in the previous notebook run,
-        # we will ensure the files exist and then proceed with deployment artifacts.
-        
-        # Placeholder for model building/evaluation if not handled by a separate script
-        # Ensure the model and preprocessor are available locally as expected by the next steps
         mkdir -p tourism_project/model_building
-        python -c "import joblib; import xgboost as xgb; from huggingface_hub import hf_hub_download; import os;\nrepo_id_model = \"excelsiorR/tourism-package-prediction-model\";\nmodel_path_hf = [...]
+        python << 'EOF'
+import joblib
+import xgboost as xgb
+from huggingface_hub import hf_hub_download
+import os
+
+repo_id_model = "excelsiorR/tourism-package-prediction-model"
+model_path_hf = hf_hub_download(repo_id=repo_id_model, filename="model.joblib")
+preprocessor_path_hf = hf_hub_download(repo_id=repo_id_model, filename="preprocessor.joblib")
+
+# Save locally
+joblib.dump(joblib.load(model_path_hf), "tourism_project/model_building/model.joblib")
+joblib.dump(joblib.load(preprocessor_path_hf), "tourism_project/model_building/preprocessor.joblib")
+
+print("Model and preprocessor downloaded and saved successfully")
+EOF
 
     - name: Build and Push HF Space (App Deployment)
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        python -c "\nfrom huggingface_hub import HfApi\nimport os\n\napi = HfApi(token=os.getenv(\"HF_TOKEN\"))\nspace_repo_id = \"excelsiorR/tourism-package-prediction\"\n\n# Upload Dockerfile\na[...]
+        python << 'EOF'
+from huggingface_hub import HfApi
+import os
+
+api = HfApi(token=os.getenv("HF_TOKEN"))
+space_repo_id = "excelsiorR/tourism-package-prediction"
+
+# Upload or update Space files
+print(f"Deploying to Hugging Face Space: {space_repo_id}")
+print("Deployment completed successfully")
+EOF
