@@ -22,7 +22,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r tourism_project/requirements.txt
-        pip install huggingface_hub datasets scikit-learn mlflow hyperopt xgboost
+        pip install huggingface_hub[cli] datasets scikit-learn mlflow hyperopt xgboost
 
     - name: Hugging Face Login
       run: |
