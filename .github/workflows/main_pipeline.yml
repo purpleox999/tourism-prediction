@@ -43,61 +43,61 @@ jobs:
         # Ensure the model and preprocessor are available locally as expected by the next steps
         mkdir -p tourism_project/model_building
         python << 'EOF'
-import joblib
-import xgboost as xgb
-from huggingface_hub import hf_hub_download
-import os
+        import joblib
+        import xgboost as xgb
+        from huggingface_hub import hf_hub_download
+        import os
 
-repo_id_model = "excelsiorR/tourism-package-prediction-model"
+        repo_id_model = "excelsiorR/tourism-package-prediction-model"
 
-# Download the model and preprocessor
-model_path_hf = hf_hub_download(repo_id=repo_id_model, filename="xgboost_model.json")
-preprocessor_path_hf = hf_hub_download(repo_id=repo_id_model, filename="preprocessor.joblib")
+        # Download the model and preprocessor
+        model_path_hf = hf_hub_download(repo_id=repo_id_model, filename="xgboost_model.json")
+        preprocessor_path_hf = hf_hub_download(repo_id=repo_id_model, filename="preprocessor.joblib")
 
-# Load the model and preprocessor
-loaded_model = xgb.XGBClassifier()
-loaded_model.load_model(model_path_hf) # Load from JSON
-loaded_preprocessor = joblib.load(preprocessor_path_hf)
+        # Load the model and preprocessor
+        loaded_model = xgb.XGBClassifier()
+        loaded_model.load_model(model_path_hf) # Load from JSON
+        loaded_preprocessor = joblib.load(preprocessor_path_hf)
 
-# Save them locally in the expected structure for subsequent steps
-loaded_model.save_model("tourism_project/model_building/xgboost_model.json")
-joblib.dump(loaded_preprocessor, "tourism_project/model_building/preprocessor.joblib")
+        # Save them locally in the expected structure for subsequent steps
+        loaded_model.save_model("tourism_project/model_building/xgboost_model.json")
+        joblib.dump(loaded_preprocessor, "tourism_project/model_building/preprocessor.joblib")
 
-print("Model and preprocessor downloaded and saved successfully")
-EOF
+        print("Model and preprocessor downloaded and saved successfully")
+        EOF
 
     - name: Build and Push HF Space (App Deployment)
       run: |
         python << 'EOF'
-from huggingface_hub import HfApi
-import os
+        from huggingface_hub import HfApi
+        import os
 
-api = HfApi(token=os.getenv("HF_TOKEN"))
-space_repo_id = "excelsiorR/tourism-package-prediction"
+        api = HfApi(token=os.getenv("HF_TOKEN"))
+        space_repo_id = "excelsiorR/tourism-package-prediction"
 
-# Upload or update Space files
-api.upload_file(
-    path_or_fileobj="tourism_project/Dockerfile",
-    path_in_repo="Dockerfile",
-    repo_id=space_repo_id,
-    repo_type="space",
-)
-print(f"Uploaded Dockerfile to {space_repo_id}")
+        # Upload or update Space files
+        api.upload_file(
+            path_or_fileobj="tourism_project/Dockerfile",
+            path_in_repo="Dockerfile",
+            repo_id=space_repo_id,
+            repo_type="space",
+        )
+        print(f"Uploaded Dockerfile to {space_repo_id}")
 
-api.upload_file(
-    path_or_fileobj="tourism_project/requirements.txt",
-    path_in_repo="requirements.txt",
-    repo_id=space_repo_id,
-    repo_type="space",
-)
-print(f"Uploaded requirements.txt to {space_repo_id}")
+        api.upload_file(
+            path_or_fileobj="tourism_project/requirements.txt",
+            path_in_repo="requirements.txt",
+            repo_id=space_repo_id,
+            repo_type="space",
+        )
+        print(f"Uploaded requirements.txt to {space_repo_id}")
 
-api.upload_file(
-    path_or_fileobj="tourism_project/app.py",
-    path_in_repo="app.py",
-    repo_id=space_repo_id,
-    repo_type="space",
-)
-print(f"Uploaded app.py to {space_repo_id}")
-print("Deployment completed successfully")
-EOF
+        api.upload_file(
+            path_or_fileobj="tourism_project/app.py",
+            path_in_repo="app.py",
+            repo_id=space_repo_id,
+            repo_type="space",
+        )
+        print(f"Uploaded app.py to {space_repo_id}")
+        print("Deployment completed successfully")
+        EOF
