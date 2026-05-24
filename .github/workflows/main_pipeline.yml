@@ -26,7 +26,6 @@ jobs:
 
     - name: Check HF_TOKEN authentication
       run: |
-        echo "HF_TOKEN_MASKED: ${{ secrets.HF_TOKEN[:5] }}...${{ secrets.HF_TOKEN[-5:] }}"
         export HF_TOKEN="${{ secrets.HF_TOKEN }}"
         huggingface-cli whoami
 
